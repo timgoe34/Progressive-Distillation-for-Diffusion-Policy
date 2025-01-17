@@ -977,6 +977,14 @@ model_path = f"{model_folder}/{model_name}"
 
 # Download pretrained models
 
+# Check if the folder exists
+if not os.path.exists(model_folder):
+    # Create the folder
+    os.makedirs(model_folder)
+    print(f"Folder '{model_folder}' created.")
+else:
+    print(f"Folder '{model_folder}' already exists.")
+
 pt_noise_model_path = "models/pt_noise_model.pth"
 if not os.path.isfile(pt_noise_model_path):
     print("Downloading pretrained Noise Model")

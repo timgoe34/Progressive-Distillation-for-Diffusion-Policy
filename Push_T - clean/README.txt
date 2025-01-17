@@ -19,7 +19,7 @@ Laden Sie den Miniconda Installer für Windows von der offiziellen Website herun
 
 ## Codebase Ordner öffnen
 
-In VS drücken Sie "Strg+O" und öffnen Sie einen Ordner aus der Codebase, bspw. 'Push\_T - clean'. Der Ordner ist nun geöffnet und die Scripte sind links im Explorer verfügbar.
+In VS drücken Sie "Strg+O" und öffnen Sie einen Ordner aus der Codebase, bspw. 'Push_T - clean'. Der Ordner ist nun geöffnet und die Scripte sind links im Explorer verfügbar.
 
 ## Environment aus YAML-Datei erstellen
 In VS drücken Sie "Strg+ö" um ein Terminal zu öffnen. Stellen Sie sicher, dass die Datei "environment.yml" links im Explorer angezeigt wird! Führen Sie folgenden Befehl im Terminal aus:

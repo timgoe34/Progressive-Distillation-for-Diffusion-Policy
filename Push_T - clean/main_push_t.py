@@ -44,6 +44,7 @@ from utils.network import *
 #@markdown Adapted from [Implicit Behavior Cloning](https://implicitbc.github.io/)
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"device: {device}")
 
 positive_y_is_up: bool = False
 """Make increasing values of y point upwards.
@@ -958,15 +959,14 @@ action_dim = 2
 ############################
 
 # change parameters here
-num_diffusion_iters = 100   # diffusion iterations of scheduler
 infSteps = 1                # steps used during inference
 infRuns = 1000              # how many inference runs?
-load_pretrained = True      # False will go ahead and train the model, if TRUE you should make sure, that the model_name exist in the model_folder
-useNoisePred = True         # use noise prediction or sample prediction. IMPORTANT for training and inference
+load_model = True           # False will go ahead and train the model, if TRUE you should make sure, that the model_name exist in the model_folder
+useNoisePred = False         # use noise prediction or sample prediction. IMPORTANT for training and inference
 
 model_folder = "models"         # folder with models
 model_name = 'pt_ema_student_1_stepspush_t.pth'  # model name in folder model_folder, if pretrained == False, a model with this name will be trained and saved into the models folder
-# as an example, we will first download a pretrained fully destilled model 'pt_ema_student_1_stepspush_t.pth' from my google drive
+
 
 ###############################'
 ### IMPORTANT Parameters END ###
@@ -985,22 +985,32 @@ if not os.path.exists(model_folder):
 else:
     print(f"Folder '{model_folder}' already exists.")
 
+
+
 pt_noise_model_path = "models/pt_noise_model.pth"
 if not os.path.isfile(pt_noise_model_path):
     print("Downloading pretrained Noise Model")
-    id = "173aH8mG5gznfuPcFN8ST0jQbontfqQHD&confirm=t"
+    id = "1EjTvhFJ9CQgs1DH0ShIHQ3MP8Ub3bd0Z&confirm=t"
     gdown.download(id=id, output=pt_noise_model_path, quiet=False)
 
 pt_ema_student_1_stepspush_t_model_path = "models/pt_ema_student_1_stepspush_t.pth"
 if not os.path.isfile(pt_ema_student_1_stepspush_t_model_path):
     print("Downloading pretrained destilled Model")
-    id = "1EjTvhFJ9CQgs1DH0ShIHQ3MP8Ub3bd0Z&confirm=t"
+    id = "173aH8mG5gznfuPcFN8ST0jQbontfqQHD&confirm=t"
     gdown.download(id=id, output=pt_ema_student_1_stepspush_t_model_path, quiet=False)
 
 
 
-noise_scheduler = DDPMScheduler(
-        num_train_timesteps=num_diffusion_iters,
+
+def train(
+    device = device,
+    model_path = model_path,
+    num_epochs = 100,
+    useNoisePred = useNoisePred
+    ):
+
+    noise_scheduler = DDPMScheduler(
+        num_train_timesteps=100,
         # the choise of beta schedule has big impact on performance
         # we found squared cosine works the best
         beta_schedule='squaredcos_cap_v2',
@@ -1009,14 +1019,6 @@ noise_scheduler = DDPMScheduler(
         # our network predicts noise (instead of denoised action)
         prediction_type = 'epsilon' if useNoisePred else 'sample'
     )
-
-def train(
-    device = device,
-    model_path = model_path,
-    noise_scheduler = noise_scheduler,
-    num_epochs = 100,
-    useNoisePred = useNoisePred
-    ):
 
     print("Training model for noise pred." if useNoisePred else "Training model for samples.")
     
@@ -1160,37 +1162,29 @@ def load_model_with_info(model_path,            # file_path: Path to the .pth fi
 
     # observation feature has 514 dims in total per step
     obs_dim = vision_feature_dim + lowdim_obs_dim
-    noise_pred_net, nets = 0,0
-    if useNoisePred:
-        # create network object
-        noise_pred_net = ConditionalUnet1D(
-            input_dim=action_dim,
-            global_cond_dim=obs_dim*obs_horizon
-        )
 
-        # the final arch has 2 parts
-        nets = nn.ModuleDict({
-            'vision_encoder': vision_encoder,
-            'noise_pred_net': noise_pred_net
-        }) 
-    else:
-       # create sample network object
-        sample_pred_net = ConditionalUnet1D_sample(
-            input_dim=action_dim,
-            global_cond_dim=obs_dim*obs_horizon
-        )
-
-        # the final arch has 2 parts
-        nets = nn.ModuleDict({
-            'vision_encoder': vision_encoder,
-            'sample_pred_net': sample_pred_net
-        })   
+    
+    
+    # the final arch has 2 parts
+    nets = nn.ModuleDict({
+        'vision_encoder': vision_encoder,
+        'noise_pred_net': ConditionalUnet1D(
+        input_dim=action_dim,
+        global_cond_dim=obs_dim*obs_horizon
+    )
+    }) if useNoisePred else nn.ModuleDict({
+        'vision_encoder': vision_encoder,
+        'noise_pred_net': ConditionalUnet1D_sample(
+        input_dim=action_dim,
+        global_cond_dim=obs_dim*obs_horizon
+    )
+    })
+          
     # Load model
     if os.path.exists(model_path):
         print(f"model_path exists!")
         #model_checkpoint_path = os.path.join(checkpoint_dir, "model.pth")
-        checkpoint = torch.load(model_path, weights_only=False, map_location=device)
-        
+        checkpoint = torch.load(model_path, weights_only=False, map_location=device)        
     
         # Check if training info exists
         if 'training_info' in checkpoint:
@@ -1216,55 +1210,33 @@ def load_model_with_info(model_path,            # file_path: Path to the .pth fi
         print("model_path invalid!")
         return 0
 
-#@markdown ### **Loading Pretrained Models if load_pretrained = True, else they will be trained **
+#@markdown ### **Loading Models if load_model = True, else it will be trained **
 
-def load_or_train():
-
-    if load_pretrained:
-        nets = load_model_with_info(model_path,            # file_path: Path to the .pth file containing the model and training info.
+nets = load_model_with_info(model_path,            # file_path: Path to the .pth file containing the model and training info.
                             device,                # The device to load the model onto.
                             lowdim_obs_dim,        # low dim obs of the model
                             vision_feature_dim,    # Vision feature dimension
                             obs_horizon,           # Observation horizon
                             action_dim,            # dim of actions
                             useNoisePred           # use noise Prediction Network or Sample Prediction Network?
-                            )
-        return(nets)
-
-    else:
-        if(useNoisePred):
-            nets = train(
-                device = device,
-                model_path = model_path,
-                noise_scheduler = noise_scheduler,
-                num_epochs = 100,
-                useNoisePred = useNoisePred
-            )
-            return(nets)
-        else:
-            nets = train(
-                device = device,
-                model_path = model_path,
-                noise_scheduler = noise_scheduler,
-                num_epochs = 100,                
-                useNoisePred = useNoisePred
-            )
-            return(nets)
-
-nets = load_or_train()
+                            ) if load_model else train(
+            device = device,
+            model_path = model_path,
+            num_epochs = 100,
+            useNoisePred = useNoisePred
+        )
 
 #@markdown ### **Inference**
-def inference(
+def inference(                             
+        loaded_ema_nets,
+        useNoisePred,
+        model_name, 
         max_steps = 200,                    # limit enviornment interaction to 200 steps before termination
         seed = 100000,                      # use a seed >200 to avoid initial states seen in the training dataset
-        loaded_ema_nets = nets,
-        model_name = "model",
-        noise_scheduler=noise_scheduler,    # noise scheduler used for inference
         set_num_diffusion_iters = 100,
         saveVideo = False,
-        verbose = False,
-        useNoisePred = useNoisePred
-        ):
+        verbose = False):
+
     
     """
     inference Loop used for evaluating the models performance on the push t task
@@ -1275,6 +1247,17 @@ def inference(
     - loaded_ema_nets: ema_nets used for predictions
     - model_name: name of the used model nets -> determines the video output name / score output name
     """
+    noise_scheduler = DDPMScheduler(
+        num_train_timesteps=100,
+        # the choise of beta schedule has big impact on performance
+        # we found squared cosine works the best
+        beta_schedule='squaredcos_cap_v2',
+        # clip output to [-1,1] to improve stability
+        clip_sample=True,
+        # our network predicts noise (instead of denoised action)
+        prediction_type = 'epsilon' if useNoisePred else 'sample'
+    )
+
     env = PushTImageEnv()    
     env.seed(seed)
 
@@ -1288,7 +1271,7 @@ def inference(
     imgs = [env.render(mode='rgb_array')]
     rewards = list()
     done = False
-    step_idx = 0
+    step_idx = 0 
     start_time = time.time()
     
 
@@ -1309,11 +1292,9 @@ def inference(
             # (2,3,96,96)
             nagent_poses = torch.from_numpy(nagent_poses).to(device, dtype=torch.float32)
             # (2,2)
-
             
             # infer action
-            with torch.no_grad():
-                                                 
+            with torch.no_grad():                                                 
                 # get image features
                 image_features = loaded_ema_nets['vision_encoder'](nimages)
                 # (2,512)
@@ -1337,7 +1318,7 @@ def inference(
                         sample=  noisy_action,
                         timestep= k,
                         global_cond=obs_cond
-                    ) if useNoisePred else loaded_ema_nets['sample_pred_net'](
+                    ) if useNoisePred else loaded_ema_nets['noise_pred_net'](
                         noisy_sample=  noisy_action,
                         timestep= k,
                         global_cond=obs_cond
@@ -1345,7 +1326,7 @@ def inference(
                             
                     noisy_action = noise_scheduler.step(
                         model_output=noise_pred,
-                        timestep=k,
+                        timestep= k,
                         sample=noisy_action
                     ).prev_sample   
 
@@ -1422,7 +1403,7 @@ def inference(
     return([score, inferenceTime])
 
 
-def run_multiple_inference(n_runs, set_num_diffusion_iters, max_steps=200, seed=100000, loaded_ema_nets=None, model_name=None, noise_scheduler=None, useNoisePred = useNoisePred):
+def run_multiple_inference(n_runs, set_num_diffusion_iters, max_steps=200, seed=100000, loaded_ema_nets=None, model_name=None, useNoisePred = useNoisePred):
     """
     Runs the inference function multiple times and stores results in numpy arrays.
     
@@ -1453,7 +1434,6 @@ def run_multiple_inference(n_runs, set_num_diffusion_iters, max_steps=200, seed=
             seed=current_seed,
             loaded_ema_nets=loaded_ema_nets,
             model_name=model_name,
-            noise_scheduler=noise_scheduler,
             set_num_diffusion_iters=set_num_diffusion_iters,
             useNoisePred = useNoisePred
         )
@@ -1475,15 +1455,26 @@ def run_multiple_inference(n_runs, set_num_diffusion_iters, max_steps=200, seed=
     
 # RUN INFERENCE MULTIPLE TIMES
 
+inference(
+            loaded_ema_nets=nets,
+            model_name=model_name,
+            set_num_diffusion_iters=1,
+            useNoisePred = useNoisePred,
+            max_steps=200,
+            seed=100000,            
+            saveVideo = True,
+            verbose = True
+        )
+# or run multiple times :)
+'''
 run_multiple_inference(
     n_runs=infRuns,
     set_num_diffusion_iters=infSteps,
     loaded_ema_nets=nets,
     model_name=model_path,
-    noise_scheduler=noise_scheduler,
     useNoisePred = useNoisePred
 )
-
+'''
 
 # Progressive Destillation
 # if needed, run below code to progressively destill the model into faster submodels

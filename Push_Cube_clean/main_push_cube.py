@@ -241,7 +241,13 @@ def push_cube_replicate_dest3():
     )
 
 if __name__ == "__main__":
+    # Create InfData folder if it doesn't exist
+    if not os.path.exists("InfData"):
+        os.makedirs("InfData")
 
+    # Create models folder if it doesn't exist
+    if not os.path.exists("models"):
+        os.makedirs("models")
     ## Download datasets 
     ee_data_path = "data_storage.zarr.zip"
     if not os.path.isfile(ee_data_path):

@@ -1650,7 +1650,7 @@ def progressive_distillation_training(
 progressive_distillation_training(
     trained_nets=nets,
     dataloader=dataloader,
-    checkpoint_saving_dir=os.path.join(os.getcwd()),
+    checkpoint_saving_dir=os.path.join(os.getcwd(), "models"), 
     num_epochs=15,
     initial_steps=100,
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),

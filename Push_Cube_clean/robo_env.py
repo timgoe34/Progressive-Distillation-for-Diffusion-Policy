@@ -45,7 +45,7 @@ import os
 from datetime import datetime
 import pybullet_data
 from collections import namedtuple
-from attrdict import AttrDict
+from addict import Dict
 import random
 import time
 
@@ -202,7 +202,7 @@ class PushCubeEnv():
             self.joint_type_list = ["REVOLUTE", "PRISMATIC", "SPHERICAL", "PLANAR", "FIXED"]
             self.joint_info = namedtuple("jointInfo", ["id", "name", "type", "lowerLimit", "upperLimit", "maxForce", "maxVelocity", "controllable"])
             self.num_joints = p.getNumJoints(self.panda)
-            self.joints = AttrDict()
+            self.joints = Dict()
             self.current_joint_angles = [-0.6002407739360265, 0.515839628272284, 0.419641777995558, -2.329040114381972, -0.558347742443123, 2.752384990431231, -0.4498838863576673] # vor ik
             for i in range(self.num_joints):
                 info = p.getJointInfo(self.panda, i)

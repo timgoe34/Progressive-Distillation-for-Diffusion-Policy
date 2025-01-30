@@ -20,6 +20,8 @@ Direkter Link: https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86
 - Suchen Sie nach "Python"
 - Installieren Sie die offizielle Python Extension von Microsoft
 
+Für Pybullet ist außerdem die Installation von cpp visual build tools notwendig. Nur dann kann pybullet verwendet werden.
+https://visualstudio.microsoft.com/de/visual-cpp-build-tools/
 
 ## Codebase Ordner öffnen
 

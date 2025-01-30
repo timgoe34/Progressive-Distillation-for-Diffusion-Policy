@@ -26,11 +26,23 @@ Direkter Link: https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86
 In VS drücken Sie "Strg+k" und danach "Strg+o" und öffnen Sie einen Ordner aus der Codebase, bspw. 'Push_T - clean'. Der Ordner ist nun geöffnet und die Scripte sind links im Explorer verfügbar.
 
 ## Environment aus YAML-Datei erstellen
-In VS drücken Sie "Strg+ö" um ein Terminal zu öffnen. Stellen Sie sicher, dass die Datei "environment.yml" links im Explorer angezeigt wird! Führen Sie folgenden Befehl im Terminal aus. Das klappt allerdings nur, wenn conda Teil der System-Umgebungsvariablen ist. 
 
- conda env create --name envname --file=environments.yml python=3.11.9
+Überprüfen Sie bitte, ob Ihr PC CUDA unterstützt: Dafür geben Sie "nvidia-smi" in bash ein oder prüfen Sie, ob ihre GPU auf dieser Liste ist: https://en.wikipedia.org/wiki/CUDA.
+### Mit CUDA
 
-Dabei ist "environment.yml" der Pfad zu Ihrer YAML-Datei und "envname" der Umgebungsname. 
+In VS drücken Sie "Strg+ö" um ein Terminal zu öffnen. Stellen Sie sicher, dass die Datei "environment_cuda.yml" links im Explorer auf der ersten Ebene unter dem Ordner angezeigt wird! Führen Sie folgenden Befehl im Terminal aus. Das klappt allerdings nur, wenn conda Teil der System-Umgebungsvariablen ist. 
+
+ conda env create --name envname --file=environments_cuda.yml python=3.11.9
+
+Dabei ist "environment_cuda.yml" der Pfad zu Ihrer YAML-Datei und "envname" der Umgebungsname. 
+
+### Ohne CUDA
+
+In VS drücken Sie "Strg+ö" um ein Terminal zu öffnen. Stellen Sie sicher, dass die Datei "environment_cpu.yml" links im Explorer auf der ersten Ebene unter dem Ordner angezeigt wird! Führen Sie folgenden Befehl im Terminal aus. Das klappt allerdings nur, wenn conda Teil der System-Umgebungsvariablen ist. 
+
+ conda env create --name envname --file=environments_cpu.yml python=3.11.9
+
+Dabei ist "environment_cuda.cpu" der Pfad zu Ihrer YAML-Datei und "envname" der Umgebungsname. 
 
 
 ## Environment in VS Code verwenden

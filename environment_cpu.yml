@@ -30,8 +30,8 @@ dependencies:
   - xz=5.4.6=h8cc25b3_1
   - zlib=1.2.13=h8cc25b3_1
   - pip:
+      - addict==2.4.0
       - asciitree==0.3.3
-      - attrdict==2.0.1
       - beautifulsoup4==4.12.3
       - certifi==2024.12.14
       - cffi==1.17.1

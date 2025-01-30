@@ -60,6 +60,7 @@ dependencies:
       - opencv-python==4.11.0.86
       - packaging==24.2
       - pillow==10.2.0
+      - pybullet==3.2.7
       - pycparser==2.22
       - pygame==2.6.1
       - pymunk==6.10.0

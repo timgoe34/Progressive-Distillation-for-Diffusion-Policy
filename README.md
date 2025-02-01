@@ -1,8 +1,11 @@
-# Progressive Distillation for Diffusion Policy
+https://github.com/user-attachments/assets/8291c708-96b4-421e-a49c-ab254f167874
+# Improving Diffusion Policy
 
 # Anleitung für Windows
 
-## Miniconda Installation
+## Minicon
+
+da Installation
 
 Laden Sie den Miniconda Installer für Windows von der offiziellen Website herunter: "https://docs.conda.io/en/latest/miniconda.html"	
 Direkter Link: https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
